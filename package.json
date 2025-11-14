@@ -1,9 +1,9 @@
 {
   "name": "group-tab-ai-extension",
   "displayName": "Group Tab AI extension",
-  "version": "1.4.2",
-  "description": "Is a browser extension that uses advanced AI technology powered by ChatGPT to group your browser tabs into logical categories.",
-  "author": "zhixuan2333",
+  "version": "2024.11.14",
+  "description": "An intelligent browser extension that uses advanced AI (OpenAI/Gemini) to automatically organize your browser tabs into logical, context-aware groups. Goes beyond simple domain-based grouping by analyzing actual page content, understanding your workflow, and learning from your preferences.",
+  "author": "quochung-cyou",
   "scripts": {
     "dev": "sh ./script/version.sh && plasmo dev",
     "dev:edge": "pnpm dev --target=edge-mv3",
@@ -13,6 +13,11 @@
     "package": "plasmo package",
     "package:edge": "pnpm package --target=edge-mv3",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx ."
+  },
+  "pnpm": {
+    "overrides": {
+      "sharp": "0.33.2"
+    }
   },
   "dependencies": {
     "@plasmohq/messaging": "^0.1.7",
@@ -50,11 +55,16 @@
       }
     ],
     "host_permissions": [
-      "https://api.openai.com/*/*"
+      "https://api.openai.com/*/*",
+      "https://generativelanguage.googleapis.com/*",
+      "http://*/*",
+      "https://*/*"
     ],
     "permissions": [
       "tabs",
-      "tabGroups"
+      "tabGroups",
+      "scripting",
+      "notifications"
     ],
     "commands": {
       "all-tabs": {

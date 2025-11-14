@@ -1,12 +1,11 @@
 import { Storage } from "@plasmohq/storage"
 
 const storage = new Storage({
-  area: "sync"
+  area: "local"
 })
 
 export interface Settings {
   showName: boolean
-  autoGroup: boolean
   specialRequirements: string
   keepMiscTab: boolean
   keepExistingGroups: boolean
@@ -14,7 +13,6 @@ export interface Settings {
 
 export const defaultSettings: Settings = {
   showName: true,
-  autoGroup: true,
   specialRequirements: "",
   keepMiscTab: false,
   keepExistingGroups: false

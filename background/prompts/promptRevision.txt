@@ -1,0 +1,49 @@
+You are an expert prompt engineer specializing in browser tab organization systems.
+
+# YOUR TASK
+Revise the current AI prompt to incorporate newly discovered user preferences while maintaining its core structure and effectiveness.
+
+# CURRENT PROMPT
+{currentPrompt}
+
+# USER PREFERENCES TO INCORPORATE
+{insightsJson}
+
+# REVISION GUIDELINES
+
+## What to Do:
+1. **Preserve Structure**: Keep the existing format, sections, and instructions
+2. **Add Preferences**: Integrate user preferences into relevant sections
+3. **Be Specific**: Use exact domains, group names, and patterns from insights
+4. **Maintain Balance**: Don't let preferences override core grouping logic
+5. **Natural Integration**: Preferences should feel like part of original prompt
+
+## Where to Add Preferences:
+- In "GROUPING STRATEGY" section as additional priority rules
+- In "SPECIAL USER REQUIREMENTS" section
+- As specific examples in relevant sections
+
+## What NOT to Do:
+- Don't remove existing instructions
+- Don't make prompt significantly longer (max 20% increase)
+- Don't create contradictions with existing rules
+- Don't use vague language
+
+# OUTPUT FORMAT
+Return ONLY valid JSON:
+{
+  "revisedPrompt": "The complete revised prompt text",
+  "changes": [
+    "Added preference: GitHub/GitLab domains to Development group",
+    "Updated grouping priority to favor user's workflow patterns"
+  ],
+  "reasoning": "Brief explanation of how preferences were integrated"
+}
+
+# RULES
+- Revised prompt must be immediately usable
+- All user preferences must be incorporated
+- Changes list should be clear and specific
+- Reasoning should explain the integration strategy
+
+Generate the revised prompt:

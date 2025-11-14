@@ -12,18 +12,23 @@ interface Props {
   value: string
   onChange: (value: string) => void
   style?: CSSProperties
+  placeholder?: string
+  inputType?: string
 }
 
 export default function AutoSaveInput({
   value,
   onChange,
-  style
+  style,
+  placeholder,
+  inputType
 }: Props): ReactElement {
-  const [data, setData] = useState("")
+  const [data, setData] = useState(value)
   // -1 = Empty, 0 = loading, 1 = success
   const [isSaved, setIsSaved] = useState(0)
 
   useEffect(() => {
+    setData(value)
     if (value.length > 0) {
       setIsSaved(1)
     } else {
@@ -47,24 +52,17 @@ export default function AutoSaveInput({
     }
   }, [data])
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        gap: "5px",
-        alignItems: "center",
-        justifyContent: "center",
-        ...style
-      }}>
+    <div style={{ display: "flex", flexDirection: "row", gap: "5px", alignItems: "center" }}>
       <input
         onChange={(e) => {
           setData(e.target.value)
         }}
         value={data}
-        placeholder="sk-xxxxx"
-        type="password"
+        placeholder={placeholder ?? "sk-xxxxx"}
+        type={inputType ?? "password"}
+        style={style}
       />
-      <div>
+      <div style={{ flexShrink: 0 }}>
         {isSaved === -1 ? <X size={20} color="#ff2825" /> : null}
         {isSaved === 1 ? <Check size={20} color="#00d26a" /> : null}
         {isSaved === 0 ? (

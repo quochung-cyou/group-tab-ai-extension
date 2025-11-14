@@ -2,11 +2,13 @@ import type { Provider } from "~background/types"
 
 export class OpenAIProvider implements Provider {
   private readonly token: string
-  constructor(token: string) {
+  private readonly model: string
+  constructor(token: string, model: string) {
     this.token = token
+    this.model = model
   }
 
-  async generate(prompt: string): Promise<string> {
+  async generate(prompt: string, signal?: AbortSignal): Promise<string> {
     // Define the schema for a single TabGroup object
     const tabGroupItemSchema = {
       type: "object",
@@ -43,33 +45,38 @@ export class OpenAIProvider implements Provider {
       additionalProperties: false
     };
 
+    const body = {
+      model: this.model,
+      messages: [
+        {
+          role: "system",
+          content: "You are an assistant that groups browser tabs based on their content. Respond ONLY with a valid JSON object matching the specified schema, containing a 'groups' property which is an array of tab groups."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "TabGroupResponse", // Updated name for the root schema
+          schema: rootSchema, // Use the root object schema
+          strict: true
+        }
+      }
+    }
+
+    console.log("[OpenAI] Request body", body)
+
     const rep = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + this.token
       },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are an assistant that groups browser tabs based on their content. Respond ONLY with a valid JSON object matching the specified schema, containing a 'groups' property which is an array of tab groups."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "TabGroupResponse", // Updated name for the root schema
-            schema: rootSchema, // Use the root object schema
-            strict: true
-          }
-        }
-      })
+      body: JSON.stringify(body),
+      signal
     })
     if (!rep.ok) {
       const errorBody = await rep.text();
@@ -93,8 +100,8 @@ export class OpenAIProvider implements Provider {
     return JSON.stringify(tabGroupsArray);
   }
 
-  async generateWithFormat<T>(prompt: string): Promise<T> {
-    const resp = await this.generate(prompt)
+  async generateWithFormat<T>(prompt: string, signal?: AbortSignal): Promise<T> {
+    const resp = await this.generate(prompt, signal)
     return JSON.parse(resp) as T
   }
 }

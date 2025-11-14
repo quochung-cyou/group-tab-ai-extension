@@ -1,4 +1,4 @@
 export interface Provider {
-  generate: (prompt: string) => Promise<string>
-  generateWithFormat: <T>(prompt: string) => Promise<T>
+  generate: (prompt: string, signal?: AbortSignal) => Promise<string>
+  generateWithFormat: <T>(prompt: string, signal?: AbortSignal) => Promise<T>
 }

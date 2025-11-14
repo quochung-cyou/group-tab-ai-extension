@@ -1,8 +1,6 @@
-import { getSettings } from "~storage/setting"
-
-import { autoGroup } from "./command/autoGroup"
 import { groupAllTabs } from "./command/groupAllTabs"
 import { unGroupAllTabs } from "./command/unGroupAllTabs"
+import "./tabGroupListener"
 
 console.log("👋 Hi! Auto group tabs extension is running now!")
 
@@ -34,28 +32,4 @@ chrome.runtime.onInstalled.addListener((e) => {
   }
 })
 
-// Add listener for tab created
-// If setting is auto group, group all tabs
-chrome.tabs.onCreated.addListener((tab) => {
-  tabHandler(tab)
-})
-
-chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete") {
-    tabHandler(tab)
-  }
-})
-
-function tabHandler(tab: chrome.tabs.Tab): void {
-  void (async (tab): Promise<void> => {
-    console.log(`[AutoGroup] tabHandler triggered for tab ID: ${tab.id ?? 'N/A'}, URL: ${tab.url ?? 'N/A'}`);
-    const setting = await getSettings()
-    console.log(`[AutoGroup] Fetched settings. autoGroup is: ${String(setting.autoGroup)}`);
-    if (setting.autoGroup) {
-      console.log(`[AutoGroup] Calling autoGroup function for tab ID: ${tab.id ?? 'N/A'}`);
-      autoGroup(tab)
-    } else {
-      console.log(`[AutoGroup] autoGroup setting is false. Skipping autoGroup function.`);
-    }
-  })(tab)
-}
+// no automatic grouping; grouping is only triggered explicitly via commands

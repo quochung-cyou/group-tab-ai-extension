@@ -1,0 +1,153 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for changelog generation
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build extension
+        run: pnpm build
+      
+      - name: Get version info
+        id: version_info
+        run: |
+          # Auto-generate version with date, time, and commit SHA
+          DATE=$(date +'%Y.%m.%d')
+          TIME=$(date +'%H%M')
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          
+          # Version format: YYYY.MM.DD.HHMM
+          VERSION="${DATE}.${TIME}"
+          
+          # Release name format: vYYYY.MM.DD.HHMM-sha
+          RELEASE_NAME="v${VERSION}-${SHORT_SHA}"
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "date=${DATE}" >> $GITHUB_OUTPUT
+          echo "time=${TIME}" >> $GITHUB_OUTPUT
+          echo "release_name=${RELEASE_NAME}" >> $GITHUB_OUTPUT
+          
+          echo "Release will be: ${RELEASE_NAME}"
+      
+      - name: Create ZIP archive
+        run: |
+          cd build/chrome-mv3-prod
+          zip -r ../../group-tab-ai-extension-${{ steps.version_info.outputs.release_name }}.zip .
+          cd ../..
+          
+          # Verify ZIP was created
+          ls -lh group-tab-ai-extension-*.zip
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -z "$LAST_TAG" ]; then
+            # First release - get all commits
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            # Get commits since last tag
+            COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+          
+          # Create changelog
+          cat > CHANGELOG.md << EOF
+          # Release ${{ steps.version_info.outputs.release_name }}
+          
+          **Version:** ${{ steps.version_info.outputs.version }}
+          **Date:** $(date +'%Y-%m-%d')
+          **Commit:** ${{ steps.version_info.outputs.short_sha }}
+          
+          ## What's Changed
+          
+          ${COMMITS}
+          
+          ## Installation
+          
+          1. Download \`group-tab-ai-extension-${{ steps.version_info.outputs.release_name }}.zip\`
+          2. Unzip the file
+          3. Open Chrome and go to \`chrome://extensions/\`
+          4. Enable "Developer mode"
+          5. Click "Load unpacked" and select the unzipped folder
+          
+          ## Setup
+          
+          1. Click the extension icon
+          2. Go to Settings tab
+          3. Choose AI provider (OpenAI or Gemini)
+          4. Enter your API key
+          5. Start grouping tabs!
+          
+          ---
+          
+          **Full Changelog:** https://github.com/${{ github.repository }}/compare/${LAST_TAG}...${{ github.sha }}
+          EOF
+          
+          cat CHANGELOG.md
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-build-${{ steps.version_info.outputs.release_name }}
+          path: build/chrome-mv3-prod/
+          retention-days: 90
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version_info.outputs.version }}
+          name: ${{ steps.version_info.outputs.release_name }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+          files: |
+            group-tab-ai-extension-${{ steps.version_info.outputs.release_name }}.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Release summary
+        run: |
+          echo "## 🎉 Release Created Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Release Name:** ${{ steps.version_info.outputs.release_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.version_info.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** ${{ steps.version_info.outputs.date }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ steps.version_info.outputs.short_sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Release Assets" >> $GITHUB_STEP_SUMMARY
+          echo "- \`group-tab-ai-extension-${{ steps.version_info.outputs.release_name }}.zip\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [View Release](https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version_info.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Download ZIP](https://github.com/${{ github.repository }}/releases/download/v${{ steps.version_info.outputs.version }}/group-tab-ai-extension-${{ steps.version_info.outputs.release_name }}.zip)" >> $GITHUB_STEP_SUMMARY

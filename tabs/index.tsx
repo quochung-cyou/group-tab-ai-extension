@@ -1,118 +1,223 @@
-import type { CSSProperties, ReactElement } from "react"
+import type { ReactElement } from "react"
+import { useState, useEffect } from "react"
 import { Folders } from "tabler-icons-react"
 
 import { sendToBackground } from "@plasmohq/messaging"
-import { useStorage } from "@plasmohq/storage/hook"
 
-import done from "~assets/gif/done.gif"
-import time from "~assets/gif/time.gif"
-import apikeyImage from "~assets/images/api_key.png"
 import AutoSaveInput from "~components/autoSaveInput"
 import {
   type ProviderConfigs,
   ProviderType,
-  defaultProviderConfigs
+  defaultProviderConfigs,
+  getProviderConfigs,
+  setProviderConfigs
 } from "~storage/config"
-
-interface ImageProps {
-  src: string
-  alt: string
-  width?: string
-  isCenter?: boolean
-}
-
-const center: CSSProperties = {
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  width: "100%"
-}
-
-function Image({
-  src,
-  alt,
-  width = "100px",
-  isCenter = true
-}: ImageProps): ReactElement {
-  return (
-    <div style={isCenter ? center : undefined}>
-      <img src={src} width={width} alt={alt} />
-    </div>
-  )
-}
+import styles from "./index.module.css"
 
 function IndexPage(): ReactElement {
-  const [config, setConfig] = useStorage<ProviderConfigs>(
-    "providerConfigs",
-    defaultProviderConfigs
-  )
+  const [config, setConfig] = useState<ProviderConfigs>(defaultProviderConfigs)
+  
+  useEffect(() => {
+    void (async () => {
+      const loadedConfig = await getProviderConfigs()
+      setConfig(loadedConfig)
+    })()
+  }, [])
+  
+  const handleSetConfig = async (newConfig: ProviderConfigs): Promise<void> => {
+    await setProviderConfigs(newConfig)
+    setConfig(newConfig)
+  }
+
+  const provider = config?.provider ?? ProviderType.OpenAI
+  const openaiConfig = config?.configs[ProviderType.OpenAI] ?? defaultProviderConfigs.configs.openai
+  const geminiConfig = config?.configs[ProviderType.Gemini] ?? defaultProviderConfigs.configs.gemini
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        margin: "0 15rem",
-        padding: 16,
-        fontSize: 16
-      }}>
-      <h2>👋 Hi there! Thank you for install this auto group tab extension.</h2>
-      <p>
-        Let{"`"}s start <b>Grouping</b> our tabs!
-      </p>
-      <h3>🟢 | First we need to generate a OpenAI api Token.</h3>
-      <p>
-        <a
-          href="https://platform.openai.com/account/api-keys"
-          target="_blank"
-          rel="noreferrer">
-          Click here
-        </a>{" "}
-        to create a account and generate a token. And copy the token.
-      </p>
-      <Image src={apikeyImage} alt="apikey" width="100%" />
-      <h3>🟢 | Then we need to save the token.</h3>
-      <p>And type your OpenAI here and save! </p>
-      <AutoSaveInput
-        style={{
-          justifyContent: "left"
-        }}
-        value={config?.configs[ProviderType.OpenAI]?.token ?? ""}
-        onChange={(token) => {
-          void setConfig({
-            ...config,
-            configs: {
-              ...config.configs,
-              openai: {
-                ...config.configs.openai,
-                token
-              }
-            }
-          })
-        }}
-      />
+    <div className={styles.container}>
+      <div className={styles.contentWrapper}>
+        <div className={styles.leftColumn}>
+          <div className={styles.header}>
+            <span className={styles.headerLabel}>
+              Welcome
+            </span>
+            <h1 className={styles.headerTitle}>
+              Turn tab chaos into clean project groups.
+            </h1>
+            <p className={styles.headerDescription}>
+              Group Tab AI reads your open tabs and asks OpenAI or Gemini to
+              cluster them into small, focused tab groups. Configure your
+              provider once, then trigger grouping from the toolbar or a
+              keyboard shortcut.
+            </p>
+          </div>
 
-      <h3>🟢 | Now we can start grouping our tabs.</h3>
-      <p>
-        Click on the extension icon and click this button.{" "}
-        <button
-          onClick={() => {
-            void sendToBackground({ name: "groupAllTabs" })
-          }}>
-          <Folders size={20} />
-        </button>{" "}
-        The extension will group your tabs based on the title. And <b>Wait</b>.
-      </p>
-      <Image src={time} alt="time" width="400px" />
-      <h3>🟢 | At last let{"`"}s set a shortcut for it.</h3>
-      <p>
-        <code style={{ color: "blue" }}>chrome://extensions/shortcuts</code> Go
-        to here to setup a shortcut for <b>Grouping</b>. For example:{" "}
-        <kbd>Alt</kbd> + <kbd>Q</kbd> and <kbd>Alt</kbd> + <kbd>A</kbd>
-      </p>
-      <h3>🟢 | Done.</h3>
-      <p>Let go to open the many and many tabs. To try it again.</p>
-      <Image src={done} alt="done" width="400px" />
+          <ol className={styles.stepsList}>
+            <li>
+              <span className={styles.stepTitle}>
+                Choose an AI provider.
+              </span>
+              <span className={styles.stepDescription}>
+                Open the extension popup, pick either OpenAI or Gemini, and paste
+                in your API key. You can also pick which model you want to use
+                for grouping.
+              </span>
+            </li>
+            <li>
+              <span className={styles.stepTitle}>
+                Get your keys.
+              </span>
+              <span className={styles.stepDescription}>
+                For OpenAI, create a key at
+                {" "}
+                <a
+                  href="https://platform.openai.com/account/api-keys"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.stepLink}
+                >
+                  platform.openai.com
+                </a>
+                . For Gemini, create a key at
+                {" "}
+                <a
+                  href="https://aistudio.google.com/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.stepLink}
+                >
+                  Google AI Studio
+                </a>
+                .
+              </span>
+            </li>
+            <li>
+              <span className={styles.stepTitle}>
+                Tune the grouping behaviour.
+              </span>
+              <span className={styles.stepDescription}>
+                In the popup, set your rough requirements and toggle options
+                like auto-group, keeping existing groups, and whether to keep a
+                Misc group for leftovers.
+              </span>
+            </li>
+            <li>
+              <span className={styles.stepTitle}>
+                Trigger grouping.
+              </span>
+              <span className={styles.stepDescription}>
+                Click the extension icon and press Group, or go to
+                {" "}
+                <code className={styles.stepCode}>
+                  chrome://extensions/shortcuts
+                </code>
+                {" "}
+                to bind a shortcut. The extension will ask the AI to return a
+                final set of groups and apply them.
+              </span>
+            </li>
+            <li>
+              <span className={styles.stepTitle}>
+                Optional: customise the prompts.
+              </span>
+              <span className={styles.stepDescription}>
+                Open the popup and click &quot;Edit full prompt templates&quot; to adjust
+                the instructions the AI sees when it groups your tabs.
+              </span>
+            </li>
+          </ol>
+        </div>
+
+        <div className={styles.rightColumn}>
+          <div className={styles.providerCard}>
+            <div className={styles.providerHeader}>
+              <div className={styles.providerInfo}>
+                <span className={styles.providerLabel}>
+                  Current provider
+                </span>
+                <span className={styles.providerName}>
+                  {provider === ProviderType.OpenAI ? "OpenAI" : "Gemini"}
+                </span>
+              </div>
+            </div>
+
+            {provider === ProviderType.OpenAI && (
+              <div className={styles.inputSection}>
+                <span className={styles.inputLabel}>
+                  OpenAI secret key
+                </span>
+                <AutoSaveInput
+                  value={openaiConfig?.token ?? ""}
+                  onChange={(token) => {
+                    void handleSetConfig({
+                      ...(config ?? defaultProviderConfigs),
+                      configs: {
+                        ...(config?.configs ?? defaultProviderConfigs.configs),
+                        openai: {
+                          ...(openaiConfig ?? defaultProviderConfigs.configs.openai),
+                          token
+                        }
+                      }
+                    })
+                  }}
+                />
+              </div>
+            )}
+
+            {provider === ProviderType.Gemini && (
+              <div className={styles.inputSection}>
+                <span className={styles.inputLabel}>
+                  Gemini API key
+                </span>
+                <AutoSaveInput
+                  value={geminiConfig?.apiKey ?? ""}
+                  onChange={(apiKey) => {
+                    void handleSetConfig({
+                      ...(config ?? defaultProviderConfigs),
+                      configs: {
+                        ...(config?.configs ?? defaultProviderConfigs.configs),
+                        gemini: {
+                          ...(geminiConfig ?? defaultProviderConfigs.configs.gemini),
+                          apiKey
+                        }
+                      }
+                    })
+                  }}
+                />
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                void sendToBackground({ name: "groupAllTabs" })
+              }}
+              className={styles.groupButton}
+            >
+              <Folders size={16} />
+              Group current window now
+            </button>
+          </div>
+
+          <div className={styles.shortcutsCard}>
+            <span className={styles.shortcutsTitle}>
+              Shortcuts
+            </span>
+            <p className={styles.shortcutsParagraph}>
+              Open
+              {" "}
+              <code className={styles.stepCode}>
+                chrome://extensions/shortcuts
+              </code>
+              {" "}
+              and bind a key to:
+            </p>
+            <ul className={styles.shortcutsList}>
+              <li>Regroup all tabs</li>
+              <li>Ungroup all tabs</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
