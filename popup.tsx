@@ -1,6 +1,6 @@
 import type { ReactElement } from "react"
 import { useState, useEffect } from "react"
-import { FolderX, Folders } from "tabler-icons-react"
+import { FolderX, Folders, GitMerge } from "tabler-icons-react"
 
 import { sendToBackground } from "@plasmohq/messaging"
 
@@ -55,6 +55,11 @@ function IndexPopup(): ReactElement {
 
   const handleOpenLearning = (): void => {
     const url = chrome.runtime.getURL("tabs/learning.html")
+    void chrome.tabs.create({ url })
+  }
+
+  const handleOpenMergeGroups = (): void => {
+    const url = chrome.runtime.getURL("tabs/mergeGroups.html")
     void chrome.tabs.create({ url })
   }
 
@@ -130,7 +135,10 @@ function IndexPopup(): ReactElement {
           <Folders size={16} />
           {isGrouping ? "Grouping" : "Group"}
         </button>
-        <button onClick={() => { if (isGrouping) return; void (async () => { const window = await chrome.windows.getCurrent(); if (window.id == null) return; void sendToBackground({ name: "unGroupAllTabs", body: { windowId: window.id } }) })() }} style={{ width: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 999, border: "1px solid #374151", background: "#020617", color: "#e5e7eb", cursor: "pointer" }}>
+        <button onClick={handleOpenMergeGroups} style={{ width: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 999, border: "1px solid #374151", background: "#020617", color: "#22c55e", cursor: "pointer" }} title="Merge groups">
+          <GitMerge size={16} />
+        </button>
+        <button onClick={() => { if (isGrouping) return; void (async () => { const window = await chrome.windows.getCurrent(); if (window.id == null) return; void sendToBackground({ name: "unGroupAllTabs", body: { windowId: window.id } }) })() }} style={{ width: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 999, border: "1px solid #374151", background: "#020617", color: "#e5e7eb", cursor: "pointer" }} title="Ungroup all">
           <FolderX size={16} />
         </button>
       </div>
